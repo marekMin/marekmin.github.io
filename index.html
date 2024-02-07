@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,9 +11,11 @@
             text-align: center;
             padding: 0;
             margin: 0;
+            user-select: none;
         }
 
-        #start, #final {
+        #start,
+        #final {
             min-width: 100vw;
             min-height: 100vh;
         }
@@ -26,7 +29,9 @@
             margin: 0;
         }
 
-        #buttons, #start, #final {
+        #buttons,
+        #start,
+        #final {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -34,7 +39,8 @@
             gap: 1em;
         }
 
-        #start, #final {
+        #start,
+        #final {
             flex-direction: column;
         }
 
@@ -47,22 +53,25 @@
         #yes {
             background-color: rgb(34, 197, 94);
             font-weight: bold;
+            z-index: 999;
         }
 
         #no {
             background-color: rgb(239, 68, 68);
-        }
-
-        #yes, #no {
-            position: relative;
+            position: absolute;
+            left: 50%;
+            transition: 400ms ease-out;
+            transform: translate(-50%, -50%);
+            animation-timing-function: cubic-bezier(.09,1.05,0,.97);
         }
 
         img {
             max-width: 40vw;
-            width: 250px;
+            max-height: 30vh;
         }
     </style>
 </head>
+
 <body>
     <div id="start">
         <img src="https://gifdb.com/images/high/cute-love-bear-roses-ou7zho5oosxnpo6k.gif">
@@ -78,11 +87,13 @@
         <h1>Yayyyy! :></h1>
     </div>
 </body>
+
 </html>
 
 <script>
     const yes = document.querySelector("#yes"),
-          no = document.querySelector("#no");
+        no = document.querySelector("#no");
+    const min_no_dist = 100;
     const lines = [
         "Ne",
         "Jsi si jistá?",
@@ -99,25 +110,58 @@
         "Budu velmi, velmi, velmi, velmi smutný",
         "Lámeš mi srdce ;(",
     ];
-
+    
     let lines_i = 0,
-        yes_fontsize = 1.5;
-
+        yes_fontsize = 1.5,
+        no_x = 0,
+        no_y = 0;
+    
     const next_line = () => {
         no.innerText = lines[lines_i++ % lines.length];
-        yes.style.fontSize = (yes_fontsize)+ "em";
+        yes.style.fontSize = (yes_fontsize) + "em";
         yes_fontsize += 1.5;
     }
 
-    next_line();
-
-    yes.addEventListener("click", _ => {
-        document.querySelector("#start").style.display = "none";
-        document.querySelector("#final").style.display = "flex";
-    });
-    no.addEventListener("click", next_line);
-
+    let disable_push = false;
     
+    let set_no_pos = _ => {
+        let tmp = yes.getBoundingClientRect();
+        no.style.top = 10 + tmp.top + no.getBoundingClientRect().height * 1.5 + "px";
+    }
+
+    window.onresize = set_no_pos;
+
+    window.onload = function () {
+        next_line();
+    
+        yes.addEventListener("click", _ => {
+            document.querySelector("#start").style.display = "none";
+            document.querySelector("#final").style.display = "flex";
+        });
+        no.addEventListener("click", next_line);
+        set_no_pos();
+    
+        document.body.addEventListener("mousemove", e => {
+            if (disable_push) { return; }
+    
+            let mx = e.clientX,
+                my = e.clientY;
+    
+            let no_obj = no.getBoundingClientRect(),
+                no_pos_x = no_obj.x + no_obj.width / 2,
+                no_pos_y = no_obj.y + no_obj.height / 2,
+                dist_x = no_pos_x - mx,
+                dist_y = no_pos_y - my,
+                hypot = Math.sqrt(dist_x ** 2 + dist_y ** 2);
+    
+            if (hypot < min_no_dist) {
+                no.style.left = (no_x = mx + ((min_no_dist * 2) * dist_x / hypot))  + "px";
+                no.style.top = (no_y = my + ((min_no_dist * 2) * dist_y / hypot)) + "px";
+                disable_push = true;
+                setTimeout(_ => {disable_push = false;}, 200);
+            }
+        });
+    }
 
 
 
