@@ -13,8 +13,8 @@
             height: 100vh;
         }
         #c {
-            border: 7px solid rgb(201, 47, 73);
-            color: rgb(254, 241, 243);
+            max-height: 80vh;
+            box-shadow: 0 0 10px 0 #000;
         }
         #container {
             display: flex;
@@ -38,8 +38,8 @@
     const c = document.querySelector("#c")
     c.width = w
     c.height = h
-    c.style.width = w + "px"
-    c.style.height = h + "px"
+    // c.style.width = w + "px"
+    // c.style.height = h + "px"
     const gl = c.getContext("webgl")
     const particles = [];
 </script>
@@ -86,7 +86,7 @@ function getFragmentShader() {
             }
         
             if (sum >= THRESHOLD) {
-                vec3 c = mix(color1, color2, y / HEIGHT);
+                vec3 c = mix(color1, color2, (y / HEIGHT) * (y / HEIGHT));
                 gl_FragColor = vec4(c, 1.0);
                 return;
             }
@@ -191,8 +191,9 @@ function compileShader(shaderSource, shaderType) {
 
 
 <script>
-    let background = rgbConvert(201, 47, 73)
-    let color1 = rgbConvert(253, 129, 149)
+    // let background = rgbConvert(201, 47, 73)
+    let background = rgbConvert(0, 0, 0)
+    let color1 = rgbConvert(201, 47, 73)
     let color2 = rgbConvert(254, 241, 243)
 
     let particleRef, backgroundRef, color1Ref, color2Ref
