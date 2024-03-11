@@ -1,167 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valentýn</title>
+    <title>Lava Lamp</title>
     <style>
-        * {
-            font-family: Arial, Helvetica, sans-serif;
-            text-align: center;
+        body {
             padding: 0;
             margin: 0;
-            user-select: none;
+            background-color: #222;
+            width: 100vw;
+            height: 100vh;
         }
-
-        #start,
-        #final {
-            min-width: 100vw;
-            min-height: 100vh;
+        #c {
+            border: 7px solid rgb(201, 47, 73);
+            color: rgb(254, 241, 243);
         }
-
-        button {
-            padding: 20px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            margin: 0;
-        }
-
-        #buttons,
-        #start,
-        #final {
+        #container {
             display: flex;
-            justify-content: center;
+            width: 100%;
+            height: 100%;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1em;
-        }
-
-        #start,
-        #final {
-            flex-direction: column;
-        }
-
-        @media only screen and (max-width: 600px) {
-            #buttons {
-                flex-direction: column;
-            }
-        }
-
-        #yes {
-            background-color: rgb(34, 197, 94);
-            font-weight: bold;
-            z-index: 999;
-        }
-
-        #no {
-            background-color: rgb(239, 68, 68);
-            position: absolute;
-            left: 50%;
-            transition: 400ms ease-out;
-            transform: translate(-50%, -50%);
-            animation-timing-function: cubic-bezier(.09,1.05,0,.97);
-        }
-
-        img {
-            max-width: 40vw;
-            max-height: 30vh;
+            justify-content: center;
         }
     </style>
 </head>
-
 <body>
-    <div id="start">
-        <img src="https://gifdb.com/images/high/cute-love-bear-roses-ou7zho5oosxnpo6k.gif">
-        <h1>Budeš můj valentýn?</h1>
-        <div id="buttons">
-            <button id="yes">Ano</button>
-            <button id="no"></button>
-        </div>
-    </div>
-
-    <div id="final" style="display: none;">
-        <img src="https://media.tenor.com/gUiu1zyxfzYAAAAi/bear-kiss-bear-kisses.gif">
-        <h1>Yayyyy! :></h1>
+    <div id="container">
+        <canvas id="c"></canvas>
     </div>
 </body>
-
 </html>
 
 <script>
-    const yes = document.querySelector("#yes"),
-        no = document.querySelector("#no");
-    const min_no_dist = 100;
-    const lines = [
-        "Ne",
-        "Ups",
-        "Fakt? :(",
-        "A jsi si opravdu opravdu jistá???",
-        "Hehe",
-        "Jen o tom popřemýšlej :<",
-        "Budu moc moc smutnej",
-        "Budu moc, moc, moc smutnej",
-        "Budu moc, moc, moc, moc smutnej",
-        "Okay, tohle je poslední...",
-        "SIKE",
-    ];
-    
-    let lines_i = 0,
-        yes_fontsize = 1.5,
-        no_x = 0,
-        no_y = 0;
-    
-    const next_line = () => {
-        no.innerText = lines[lines_i++ % lines.length];
-        yes.style.fontSize = (yes_fontsize) + "em";
-        yes_fontsize += 1.5;
-    }
+    const h = 800
+    const w = 300
+    const c = document.querySelector("#c")
+    c.width = w
+    c.height = h
+    c.style.width = w + "px"
+    c.style.height = h + "px"
+    const gl = c.getContext("webgl")
+    const particles = [];
+</script>
 
-    let disable_push = false;
-    
-    let set_no_pos = _ => {
-        let tmp = yes.getBoundingClientRect();
-        no.style.top = 10 + tmp.top + no.getBoundingClientRect().height * 1.5 + "px";
-    }
+<script>
+    function rgbConvert(r, g, b) {
+    return [r / 255.0, g / 255.0, b / 255.0];
+}
 
-    window.onresize = set_no_pos;
+function getVertexShader() {
+    return /*glsl*/`
+        attribute vec2 position;    
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    `;
+}
 
-    window.onload = function () {
-        next_line();
-    
-        yes.addEventListener("click", _ => {
-            document.querySelector("#start").style.display = "none";
-            document.querySelector("#final").style.display = "flex";
-        });
-        no.addEventListener("click", next_line);
-        set_no_pos();
-    
-        document.body.addEventListener("mousemove", e => {
-            if (disable_push) { return; }
-    
-            let mx = e.clientX,
-                my = e.clientY;
-    
-            let no_obj = no.getBoundingClientRect(),
-                no_pos_x = no_obj.x + no_obj.width / 2,
-                no_pos_y = no_obj.y + no_obj.height / 2,
-                dist_x = no_pos_x - mx,
-                dist_y = no_pos_y - my,
-                hypot = Math.sqrt(dist_x ** 2 + dist_y ** 2);
-    
-            if (hypot < min_no_dist) {
-                no.style.left = (no_x = mx + ((min_no_dist * 2) * dist_x / hypot))  + "px";
-                no.style.top = (no_y = my + ((min_no_dist * 2) * dist_y / hypot)) + "px";
-                disable_push = true;
-                setTimeout(_ => {disable_push = false;}, 200);
+function getFragmentShader() {
+    return /*glsl*/`
+        precision highp float;
+
+        uniform vec3 particles[${particles.length}];
+        uniform vec3 background;
+        uniform vec3 color1;
+        uniform vec3 color2;
+
+        const float THRESHOLD = 0.002;
+        const float HEIGHT = ${h >> 0}.0;
+      
+        void main(){
+            float x = gl_FragCoord.x;
+            float y = gl_FragCoord.y;
+            
+            float sum = 0.0;
+            for (int i = 0; i < ${particles.length}; i++) {
+                vec3 p = particles[i];
+                float dx = p.x - x;
+                float dy = p.y - y;
+                float mass = p.z;
+
+                float dist = ((dx * dx) + (dy * dy));
+                sum += (mass * mass) / dist;
             }
-        });
+        
+            if (sum >= THRESHOLD) {
+                vec3 c = mix(color1, color2, y / HEIGHT);
+                gl_FragColor = vec4(c, 1.0);
+                return;
+            }
+      
+            gl_FragColor = vec4(background, 1.0);
+        }
+    `;
+}
+
+function webgl() {
+    let vertexShader = compileShader(getVertexShader(), gl.VERTEX_SHADER)
+    let fragmentShader = compileShader(getFragmentShader(), gl.FRAGMENT_SHADER)
+
+    let program = gl.createProgram()
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+    gl.useProgram(program)
+
+    var vertexData = new Float32Array([
+        -1.0, 1.0,
+        -1.0, -1.0,
+        1.0, 1.0,
+        1.0, -1.0,
+    ]);
+    var vertexDataBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexDataBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+
+    var positionHandle = gl.getAttribLocation(program, 'position')
+    gl.enableVertexAttribArray(positionHandle)
+    gl.vertexAttribPointer(
+        positionHandle,
+        2, // position is a vec2
+        gl.FLOAT, // each component is a float
+        gl.FALSE, // don't normalize values
+        2 * 4, // two 4 byte float components per vertex
+        0 // offset into each span of vertex data
+    )
+
+    particleRef = gl.getUniformLocation(program, 'particles')
+    backgroundRef = gl.getUniformLocation(program, 'background')
+    color1Ref = gl.getUniformLocation(program, 'color1')
+    color2Ref = gl.getUniformLocation(program, 'color2')
+}
+
+function compileShader(shaderSource, shaderType) {
+    var shader = gl.createShader(shaderType)
+    gl.shaderSource(shader, shaderSource)
+    gl.compileShader(shader)
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        throw "Shader compile failed with: " + gl.getShaderInfoLog(shader)
+    }
+
+    return shader
+}
+</script>
+<script>
+    class Particle {
+    constructor (x, y) {
+        this.x = x
+        this.y = y
+        this.vx = 0
+        this.vy = 0
+        this.mass = Math.random() * 2 + 1
+        this.tempThreshold = 10 * (this.mass ** 2)
+        this.temp = 1 + Math.random() * this.tempThreshold
+        this.tempEntropy
+        this.setTempEntropy()
+    }
+
+    setTempEntropy() {
+        this.tempEntropy = Math.round(150 * (this.mass ** 2))
+    }
+
+    update (max_x, max_y) {
+        let r = Math.random() * this.tempEntropy != 0
+        if (this.y <= 0 && (r && this.temp <= this.tempThreshold)) {
+            this.tempEntropy--
+            this.vy = 0;
+        } else {
+            if (this.y <= 0) {
+                console.log("released " + (r ? "on time" : "early"))
+            }
+            this.setTempEntropy()
+            this.vy = (this.temp - this.tempThreshold / 1.5) / (4 * Math.sqrt(this.tempThreshold)) 
+        }
+
+
+        this.x = Math.min(Math.max(this.x + this.vx, 0), max_x)
+        this.y = Math.min(Math.max(this.y + this.vy, 0), max_y)
+
+        if (this.y == 0) {
+            this.temp *= 1.005
+        } else {
+            this.temp = Math.max(this.temp * 0.9999, 1)
+        }
+    }
+}
+</script>
+
+
+<script>
+    let background = rgbConvert(201, 47, 73)
+    let color1 = rgbConvert(253, 129, 149)
+    let color2 = rgbConvert(254, 241, 243)
+
+    let particleRef, backgroundRef, color1Ref, color2Ref
+
+
+    for (let i = 0; i < 10; i++) {
+        particles.push(new Particle(Math.floor(Math.random() * w), Math.floor(Math.random() * h)))
     }
 
 
+    function loop() {
+        for (const p of particles) {
+            p.update(w, h)
+        }
 
+        const particlesFlat = new Float32Array([].concat.apply([], particles.map(x => [x.x, x.y, x.mass])))
 
+        gl.uniform3fv(backgroundRef, background)
+        gl.uniform3fv(particleRef, particlesFlat)
+        gl.uniform3fv(color1Ref, color1)
+        gl.uniform3fv(color2Ref, color2)
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        window.frameId = requestAnimationFrame(loop)
+    }
 
+    window.onload = _ => {
+        webgl()
+        if (window.frameId != null) {
+            window.cancelAnimationFrame(window.frameId)
+        }
+        loop()
+    }
 </script>
