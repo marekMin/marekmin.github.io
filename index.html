@@ -207,6 +207,11 @@ function compileShader(shaderSource, shaderType) {
         background2 = rgbConvert(252, 215, 87)
         color1 = rgbConvert(252, 215, 87)
         color2 = rgbConvert(247, 23, 53)   //216, 185, 255
+    } else if (document.location.search.indexOf("snehurka") > 0) {
+        background1 = rgbConvert(10, 16, 13)
+        background2 = rgbConvert(10, 16, 13)
+        color1 = rgbConvert(228, 211, 78)
+        color2 = rgbConvert(255, 170, 234)   //216, 185, 255
     }
 
     let particleRef, background1Ref, background2Ref, color1Ref, color2Ref
