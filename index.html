@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,12 +14,14 @@
             height: 100vh;
             overflow: hidden;
         }
+
         #c {
             width: 100%;
             height: 100%;
             max-width: 500px;
             box-shadow: 0 0 10px 0 #000;
         }
+
         #container {
             display: flex;
             width: 100%;
@@ -26,13 +29,29 @@
             align-items: center;
             justify-content: center;
         }
+
+        #message-box {
+            display: inline-block;
+            position: absolute;
+            bottom: 0;
+            padding-left: 20px;
+            color: white;
+            font-family: monospace;
+            font-size: 30px;
+            text-shadow: 1px 1px 6px #fff;
+            letter-spacing: .4rem;
+        }
+
     </style>
 </head>
+
 <body>
     <div id="container">
         <canvas id="c"></canvas>
     </div>
+    <p id="message-box"></p>
 </body>
+
 </html>
 
 <script>
@@ -41,28 +60,27 @@
     const w = c.offsetWidth
     c.width = w
     c.height = h
-    // c.style.width = w + "px"
-    // c.style.height = h + "px"
     const gl = c.getContext("webgl")
     const particles = [];
+    let canUpdate = false;
 </script>
 
 <script>
     function rgbConvert(r, g, b) {
-    return [r / 255.0, g / 255.0, b / 255.0];
-}
+        return [r / 255.0, g / 255.0, b / 255.0];
+    }
 
-function getVertexShader() {
-    return /*glsl*/`
+    function getVertexShader() {
+        return /*glsl*/`
         attribute vec2 position;    
         void main() {
             gl_Position = vec4(position, 0.0, 1.0);
         }
     `;
-}
+    }
 
-function getFragmentShader() {
-    return /*glsl*/`
+    function getFragmentShader() {
+        return /*glsl*/`
         precision highp float;
 
         uniform vec3 particles[${particles.length}];
@@ -98,129 +116,159 @@ function getFragmentShader() {
             gl_FragColor = vec4(background1, 1.0);
         }
     `;
-}
-
-function webgl() {
-    let vertexShader = compileShader(getVertexShader(), gl.VERTEX_SHADER)
-    let fragmentShader = compileShader(getFragmentShader(), gl.FRAGMENT_SHADER)
-
-    let program = gl.createProgram()
-    gl.attachShader(program, vertexShader)
-    gl.attachShader(program, fragmentShader)
-    gl.linkProgram(program)
-    gl.useProgram(program)
-
-    var vertexData = new Float32Array([
-        -1.0, 1.0,
-        -1.0, -1.0,
-        1.0, 1.0,
-        1.0, -1.0,
-    ]);
-    var vertexDataBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexDataBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
-
-    var positionHandle = gl.getAttribLocation(program, 'position')
-    gl.enableVertexAttribArray(positionHandle)
-    gl.vertexAttribPointer(
-        positionHandle,
-        2, // position is a vec2
-        gl.FLOAT, // each component is a float
-        gl.FALSE, // don't normalize values
-        2 * 4, // two 4 byte float components per vertex
-        0 // offset into each span of vertex data
-    )
-
-    particleRef = gl.getUniformLocation(program, 'particles')
-    background1Ref = gl.getUniformLocation(program, 'background1')
-    background2Ref = gl.getUniformLocation(program, 'background2')
-    color1Ref = gl.getUniformLocation(program, 'color1')
-    color2Ref = gl.getUniformLocation(program, 'color2')
-}
-
-function compileShader(shaderSource, shaderType) {
-    var shader = gl.createShader(shaderType)
-    gl.shaderSource(shader, shaderSource)
-    gl.compileShader(shader)
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        throw "Shader compile failed with: " + gl.getShaderInfoLog(shader)
     }
 
-    return shader
-}
+    function webgl() {
+        let vertexShader = compileShader(getVertexShader(), gl.VERTEX_SHADER)
+        let fragmentShader = compileShader(getFragmentShader(), gl.FRAGMENT_SHADER)
+
+        let program = gl.createProgram()
+        gl.attachShader(program, vertexShader)
+        gl.attachShader(program, fragmentShader)
+        gl.linkProgram(program)
+        gl.useProgram(program)
+
+        var vertexData = new Float32Array([
+            -1.0, 1.0,
+            -1.0, -1.0,
+            1.0, 1.0,
+            1.0, -1.0,
+        ]);
+        var vertexDataBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexDataBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+
+        var positionHandle = gl.getAttribLocation(program, 'position')
+        gl.enableVertexAttribArray(positionHandle)
+        gl.vertexAttribPointer(
+            positionHandle,
+            2, // position is a vec2
+            gl.FLOAT, // each component is a float
+            gl.FALSE, // don't normalize values
+            2 * 4, // two 4 byte float components per vertex
+            0 // offset into each span of vertex data
+        )
+
+        particleRef = gl.getUniformLocation(program, 'particles')
+        background1Ref = gl.getUniformLocation(program, 'background1')
+        background2Ref = gl.getUniformLocation(program, 'background2')
+        color1Ref = gl.getUniformLocation(program, 'color1')
+        color2Ref = gl.getUniformLocation(program, 'color2')
+    }
+
+    function compileShader(shaderSource, shaderType) {
+        var shader = gl.createShader(shaderType)
+        gl.shaderSource(shader, shaderSource)
+        gl.compileShader(shader)
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            throw "Shader compile failed with: " + gl.getShaderInfoLog(shader)
+        }
+
+        return shader
+    }
 </script>
 <script>
     class Particle {
-    constructor (x, y) {
-        this.x = x
-        this.y = y
-        this.vx = 0
-        this.vy = 0
-        this.mass = Math.random() * 2 + 1
-        this.tempThreshold = 10 * (this.mass ** 2)
-        this.temp = 1 + Math.random() * this.tempThreshold
-        this.tempEntropy
-        this.setTempEntropy()
-    }
-
-    setTempEntropy() {
-        this.tempEntropy = Math.round(150 * (this.mass ** 2))
-    }
-
-    update (max_x, max_y) {
-        let r = Math.random() * this.tempEntropy != 0
-        if (this.y <= 0 && (r && this.temp <= this.tempThreshold)) {
-            this.tempEntropy--
-            this.vy = 0;
-        } else {
-            if (this.y <= 0) {
-                console.log("released " + (r ? "on time" : "early"))
-            }
+        constructor(x, y) {
+            this.x = x
+            this.y = y
+            this.vx = 0
+            this.vy = 0
+            this.mass = .5
+            this.tempThreshold = 10 * (this.mass ** 2)
+            this.temp = 1 + Math.random() * this.tempThreshold
+            this.tempEntropy
             this.setTempEntropy()
-            this.vy = (this.temp - this.tempThreshold / 1.5) / (4 * Math.sqrt(this.tempThreshold)) 
         }
 
+        setTempEntropy() {
+            this.tempEntropy = Math.round(120 * (this.mass ** 2))
+        }
 
-        this.x = Math.min(Math.max(this.x + this.vx, 0), max_x)
-        this.y = Math.min(Math.max(this.y + this.vy, 0), max_y)
+        update(max_x, max_y) {
+            if (!canUpdate) { return }
+            let r = Math.random() * this.tempEntropy != 0
+            if (this.y <= 0 && (r && this.temp <= this.tempThreshold)) {
+                this.tempEntropy--
+                this.vy = 0
+            } else {
+                if (this.y <= 0) {
+                    console.log("released " + (r ? "on time" : "early"))
+                }
+                this.setTempEntropy()
+                this.vy = (this.temp - this.tempThreshold / 1.5) / (4 * Math.sqrt(this.tempThreshold))
+            }
 
-        if (this.y == 0) {
-            this.temp *= 1.005
-        } else {
-            this.temp = Math.max(this.temp * 0.9999, 1)
+
+            this.x = Math.min(Math.max(this.x + this.vx, 0), max_x)
+            this.y = Math.min(Math.max(this.y + this.vy, 0), max_y)
+
+            if (this.y == 0) {
+                this.temp *= 1.003
+            } else {
+                this.temp = Math.max(this.temp * 0.9999, 1)
+            }
+        }
+
+        increaseMass(increment) {
+            this.mass += increment
+            this.tempThreshold = 10 * (this.mass ** 2)
+            this.temp = 1 + Math.random() * this.tempThreshold
+            this.setTempEntropy()
         }
     }
-}
 </script>
 
-
 <script>
-    
+    const vikyCoordinates = [
+        { x: 60, y: 550 },  // V
+        { x: 80, y: 500 },  // V
+        { x: 100, y: 450 },  // V
+        { x: 120, y: 500 }, // V
+        { x: 140, y: 550 }, // V
+        { x: 200, y: 450 }, // I
+        { x: 200, y: 500 }, // I
+        { x: 200, y: 550 }, // I
+        { x: 260, y: 450 }, // K
+        { x: 260, y: 500 }, // K
+        { x: 260, y: 550 }, // K
+        { x: 320, y: 550 }, // K
+        { x: 280, y: 500 }, // K
+        { x: 320, y: 450 }, // K
+        { x: 410, y: 450 }, // Y
+        { x: 410, y: 500 }, // Y
+        { x: 380, y: 550 }, // Y
+        { x: 440, y: 550 }  // Y
+    ];
+
+
     let background1 = rgbConvert(240, 240, 240)
     let background2 = rgbConvert(20, 20, 20)
     let color1 = rgbConvert(5, 5, 5)
     let color2 = rgbConvert(200, 200, 200)
-    
-    if (document.location.search.indexOf("nikca") > 0) {
-        background1 = rgbConvert(1, 11, 19)
-        background2 = rgbConvert(252, 215, 87)
-        color1 = rgbConvert(252, 215, 87)
-        color2 = rgbConvert(247, 23, 53)   //216, 185, 255
-    } else if (document.location.search.indexOf("snehurka") > 0) {
+
+    if (document.location.search.indexOf("snehurka") > 0 || document.location.search.indexOf("viky") > 0) {
         background1 = rgbConvert(10, 16, 13)
         background2 = rgbConvert(10, 16, 13)
         color1 = rgbConvert(228, 211, 78)
         color2 = rgbConvert(255, 170, 234)   //216, 185, 255
+        document.querySelector("#message-box").innerText = "MÁM TĚ RÁD <3"
+    }
+
+    if (document.location.search.indexOf("viky") > 0) {
+        // Arrange particles to form "Viky"
+        for (let i = 0; i < vikyCoordinates.length; i++) {
+            let coord = vikyCoordinates[i];
+            particles.push(new Particle(coord.x, coord.y));
+        }
+    } else {
+        for (let i = 0; i < 19; i++) {
+            particles.push(new Particle(Math.floor(Math.random() * w), Math.floor(Math.random() * h)))
+        }
     }
 
     let particleRef, background1Ref, background2Ref, color1Ref, color2Ref
-
-
-    for (let i = 0; i < 13; i++) {
-        particles.push(new Particle(Math.floor(Math.random() * w), Math.floor(Math.random() * h)))
-    }
-
 
     function loop() {
         for (const p of particles) {
@@ -238,11 +286,29 @@ function compileShader(shaderSource, shaderType) {
         window.frameId = requestAnimationFrame(loop)
     }
 
+    function increaseParticleMassGradually() {
+        canUpdate = true
+        let increment = 2 / (30)
+        let count = 0
+        let sizes = (Array.apply(null, Array(particles.length))).map(x => (Math.random() + 1) / 30)
+        const intervalId = setInterval(() => {
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].increaseMass(sizes[i])
+            }
+            count++;
+            if (count >= 30) {
+                clearInterval(intervalId)
+            }
+        }, 1000 / 30);
+    }
+
     window.onload = _ => {
         webgl()
         if (window.frameId != null) {
             window.cancelAnimationFrame(window.frameId)
         }
         loop()
+        // Increase particle mass after 5 seconds
+        setTimeout(increaseParticleMassGradually, 3000);
     }
 </script>
