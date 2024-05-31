@@ -253,7 +253,6 @@
         background2 = rgbConvert(10, 16, 13)
         color1 = rgbConvert(228, 211, 78)
         color2 = rgbConvert(255, 170, 234)   //216, 185, 255
-        document.querySelector("#message-box").innerText = "MÁM TĚ RÁD <3"
     }
 
     if (document.location.search.indexOf("viky") > 0) {
@@ -262,6 +261,7 @@
             let coord = vikyCoordinates[i];
             particles.push(new Particle(coord.x, coord.y));
         }
+        document.querySelector("#message-box").innerText = "MÁM TĚ RÁD <3"
     } else {
         for (let i = 0; i < 19; i++) {
             particles.push(new Particle(Math.floor(Math.random() * w), Math.floor(Math.random() * h)))
